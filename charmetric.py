@@ -1,6 +1,7 @@
 """Produces a kind of a distance matrix between characters in an alphabet.
 
-Copyright (C) 2016 Kimmo Koskenniemi"""
+Copyright (C) 2016 Kimmo Koskenniemi
+"""
 
 import sys, io, libhfst
 
