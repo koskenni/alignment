@@ -10,17 +10,22 @@ for line in sys.stdin:
     w1 = libhfst.fst(f1)
     w1.insert_freely(("Ø","Ø"))
     w1.minimize()
+#    print(w1)
 
     w2 = libhfst.fst(f2)
     w2.insert_freely(("Ø","Ø"))
     w2.minimize()
+#    print(w2)
 
-    w1.compose(align)
-    w1.compose(w2)
+    w3 = libhfst.HfstTransducer(w1)
+    w3.compose(align)
+    w3.compose(w2)
+#    print(w1)
 
-    res = w1.n_best(1).minimize()
+    w3.n_best(1)
+    w3.minimize()
     
-    paths = res.extract_paths(output='text')
+    paths = w3.extract_paths(output='text')
     print(paths.strip())
 
 
