@@ -45,7 +45,7 @@ consonants = {
     'g':('Velar','Voiced','Stop'),
     'h':('Glottal','Unvoiced','Fricative')}
 
-pos = {'Bilab':1, 'Labdent':1, 'Dental':2, 'Alveolar':2, 'Labiovelar',3, 'Velar':3, 'Glottal':4}
+pos = {'Bilab':1, 'Labdent':1, 'Dental':2, 'Alveolar':2, 'Labiovelar':3, 'Velar':3, 'Glottal':4}
 voic = {'Unvoiced':1, 'Voiced':2}
 
 def cmodist(x1, x2):
@@ -113,7 +113,7 @@ speclist = ['k:c::0 k::0', 'k:x s:Ø::0', 't:d s:z::0', 'Ø:d s:z::3',
 
 all = vvlist + cclist + dbllist + sholist + dellist + epelist + speclist
 re = '[{}]*'.format(' | '.join(all))
-print(re)
+# print(re) ##
 algfst = hfst.regex(re)
 
 algfile = hfst.HfstOutputStream(filename="chardist.fst")
