@@ -3,17 +3,18 @@
 Copyright (C) 2016 Kimmo Koskenniemi
 """
 
-import sys, io, libhfst
+import sys, io, hfst
 
 vowels = {
     'i':('Close','Front','Unrounded'),
     'y':('Close','Front','Rounded'),
     'u':('Close','Back','Rounded'),
     'e':('Mid','Front','Unrounded'),
-    'ö':('Mid','Front','Rounded'),
+    'ö':('Mid','Front','Rounded'), # IPA ø
     'o':('Mid','Back','Rounded'),
-    'ä':('Open','Front','Unrounded'),
-    'a':('Open','Back','Unrounded')
+    'õ':('Mid','Back','Unrounded'), # IPA ɤ
+    'ä':('Open','Front','Unrounded'), # IPA æ
+    'a':('Open','Back','Unrounded') # IPA ɑ
     }
 
 cmo = {'Close':1, 'Mid':2, 'Open':3}
@@ -25,18 +26,26 @@ consonants = {
     'p':('Bilab','Unvoiced','Stop'),
     'b':('Bilab','Voiced','Stop'),
     'v':('Labdent','Voiced','Fricative'),
+    # 'w':('Labdent','Voiced','Fricative'), ##
+    'w':('Labiovelar','Voiced','Approximant'), ##
+    'f':('Labdent','Unvoiced','Fricative'),
+    # 'ð':('Dental', 'Voiced', 'Fricative')
+    # 'þ':('Dental', 'Unvoiced', 'Fricative')
     'n':('Alveolar','Voiced','Nasal'),
     't':('Alveolar','Unvoiced','Stop'),
+    'z':('Alveolar','Unvoiced','Stop'), ##
     'd':('Alveolar','Voiced','Stop'),
     's':('Alveolar','Unvoiced','Sibilant'),
     'l':('Alveolar','Voiced','Lateral'),
     'r':('Alveolar','Voiced','Tremulant'),
     'j':('Velar','Voiced','Approximant'),
     'k':('Velar','Unvoiced','Stop'),
+    'x':('Velar','Unvoiced','Stop'), ##
+    'c':('Velar','Unvoiced','Stop'), ##
     'g':('Velar','Voiced','Stop'),
     'h':('Glottal','Unvoiced','Fricative')}
 
-pos = {'Bilab':1, 'Labdent':1, 'Alveolar':2, 'Velar':3, 'Glottal':4}
+pos = {'Bilab':1, 'Labdent':1, 'Dental':2, 'Alveolar':2, 'Labiovelar',3, 'Velar':3, 'Glottal':4}
 voic = {'Unvoiced':1, 'Voiced':2}
 
 def cmodist(x1, x2):
@@ -104,9 +113,10 @@ speclist = ['k:c::0 k::0', 'k:x s:Ø::0', 't:d s:z::0', 'Ø:d s:z::3',
 
 all = vvlist + cclist + dbllist + sholist + dellist + epelist + speclist
 re = '[{}]*'.format(' | '.join(all))
-algfst = libhfst.regex(re)
+print(re)
+algfst = hfst.regex(re)
 
-algfile = libhfst.HfstOutputStream(filename="chardist.fst")
+algfile = hfst.HfstOutputStream(filename="chardist.fst")
 algfile.write(algfst)
 algfile.flush()
 algfile.close()
