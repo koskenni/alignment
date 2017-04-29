@@ -105,7 +105,8 @@ def mphon_weight(mphon):
         # return float(len(phon_set))
         weight = vowel_set_weight(phon_set)
     else:
-        weight = float('Infinity')
+        #weight = float('Infinity')
+        weight = 100000.0
     weight_cache[mphon] = weight
     return weight
 
@@ -124,12 +125,15 @@ def fst_to_fsa(FST):
 
 def remove_bad_transitions(FST, weighting, max_weight_allowed):
     BF = hfst.HfstBasicTransducer(FST)
+    bad_list = []
     for state in BF.states():
         for arc in BF.transitions(state):
             in_syms = arc.get_input_symbol()
             w = weighting(in_syms)
             if w > max_weight_allowed:
-                BF.remove_transition(state, arc)
+                bad_list. append((state, arc))
+    for state, arc in bad_list:
+        BF.remove_transition(state, arc)
     RES = hfst.HfstTransducer(BF)
     return RES
 
@@ -152,8 +156,7 @@ def set_weights(FST, weighting):
             insym = arc.get_input_symbol()
             outsym = arc.get_output_symbol()
             w = weighting(insym)
-            B.remove_transition(state, arc)
-            B.add_transition(state, tostate, insym, outsym, w)
+            arc.set_weight(w)
     RES = hfst.HfstTransducer(B)
     # print("set_weights:\n", RES) ##
     return RES
@@ -223,7 +226,7 @@ if __name__ == "__main__":
         best2 = [re.sub(r'^([a-zšžüõåäö])\1\1*$', r'\1', cc) for cc in best]
         # best2 = [re.sub(r'^([a-zšžüõåäöØ])([a-zšžüõåäöØ])$', r'\1:\2', cc) for cc in best]
         # print(' '.join(best2), best_w, zb)
-        # print(' '.join(best2))
-        print_alignment(best)
+        print(' '.join(best2))
+        #print_alignment(best)
         # print('  '.join(best2), zb)
     
