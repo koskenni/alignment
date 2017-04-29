@@ -1,5 +1,7 @@
 import re, sys, hfst
 
+verbosity = 0
+
 vowel_features = {
     'i':('Close','Front','Unrounded'),
     'j':('Semivowel','Front','Unrounded'),
@@ -106,7 +108,7 @@ def mphon_weight(mphon):
         weight = vowel_set_weight(phon_set)
     else:
         #weight = float('Infinity')
-        weight = 100000.0
+        weight = 1000000.0
     weight_cache[mphon] = weight
     return weight
 
@@ -149,6 +151,7 @@ def shuffle_with_zeros(string, target_length):
     return S
 
 def set_weights(FST, weighting):
+    global verbosity
     B = hfst.HfstBasicTransducer(FST)
     for state in B.states():
         for arc in B.transitions(state):
@@ -158,20 +161,23 @@ def set_weights(FST, weighting):
             w = weighting(insym)
             arc.set_weight(w)
     RES = hfst.HfstTransducer(B)
-    # print("set_weights:\n", RES) ##
+    if verbosity >=20:
+        print("set_weights:\n", RES)
     return RES
 
 def multialign(strings, target_length, weighting):
+    global verbosity
     s1 = strings[0]
     R = shuffle_with_zeros(s1, target_length)
     for string in strings[1:]:
         S = shuffle_with_zeros(string, target_length)
         R.cross_product(S)
         T = fst_to_fsa(R)
-        R = remove_bad_transitions(T, weighting, 1000000.0)
+        R = remove_bad_transitions(T, weighting, 10000.0)
         R.minimize()
     RES = set_weights(R, weighting)
-    # print("multialign:\n", RES) ##
+    if verbosity >=20:
+        print("multialign:\n", RES)
     return RES
 
 def print_alignment(lst):
@@ -183,6 +189,18 @@ def print_alignment(lst):
     return
 
 if __name__ == "__main__":
+    import argparse
+    arpar = argparse.ArgumentParser("python3 multialign.py")
+    arpar.add_argument("-l", "--layout",
+                       choices=['vertical','horizontal'],
+                       help="output layout",
+                       default="vertical")
+    arpar.add_argument("-v", "--verbosity",
+                       help="level of diagnostic output",
+                       type=int, default=0)
+    args = arpar.parse_args()
+    verbosity = args.verbosity
+    
     for line in sys.stdin:
         words = line.strip().split(sep=' ')
         ml = max([len(x) for x in words])
@@ -193,7 +211,7 @@ if __name__ == "__main__":
             if R.compare(hfst.empty_fst()):
                 continue
             RES.disjunct(R)
-            RES.n_best(10)
+            #RES.n_best(10)
             RES.minimize()
             if notyetfound:
                 notyetfound = False
@@ -205,7 +223,9 @@ if __name__ == "__main__":
         paths = RES.extract_paths(output='raw')
         for w, path in paths:
             lst = [isym for isym,outsym in path]
-            # print([(x, mphon_weight(x)) for x in lst], w) ##
+            if verbosity >=5:
+                mpw = ["{}::{:.2f}".format(x, mphon_weight(x)) for x in lst]
+                print(" ".join(mpw), "total weight = {:.3f}".format(w))
         if len(paths) < 1:
             print("***", line, "***", paths)
             continue
@@ -226,7 +246,9 @@ if __name__ == "__main__":
         best2 = [re.sub(r'^([a-zšžüõåäö])\1\1*$', r'\1', cc) for cc in best]
         # best2 = [re.sub(r'^([a-zšžüõåäöØ])([a-zšžüõåäöØ])$', r'\1:\2', cc) for cc in best]
         # print(' '.join(best2), best_w, zb)
-        print(' '.join(best2))
-        #print_alignment(best)
+        if args.layout == "horizontal":
+            print(' '.join(best2))
+        elif args.layout == "vertical":
+            print_alignment(best)
         # print('  '.join(best2), zb)
     
