@@ -126,17 +126,20 @@ def fst_to_fsa(FST):
     return RES
 
 def remove_bad_transitions(FST, weighting, max_weight_allowed):
-    BF = hfst.HfstBasicTransducer(FST)
-    bad_list = []
-    for state in BF.states():
-        for arc in BF.transitions(state):
-            in_syms = arc.get_input_symbol()
-            w = weighting(in_syms)
-            if w > max_weight_allowed:
-                bad_list. append((state, arc))
-    for state, arc in bad_list:
-        BF.remove_transition(state, arc)
-    RES = hfst.HfstTransducer(BF)
+    OLD = hfst.HfstBasicTransducer(FST)
+    NEW = hfst.HfstBasicTransducer()
+    for state in OLD.states():
+        NEW.add_state(state)
+        if OLD.is_final_state(state):
+            NEW.set_final_weight(state, 0.0)
+        for arc in OLD.transitions(state):
+            in_sym = arc.get_input_symbol()
+            w = weighting(in_sym)
+            target_st = arc.get_target_state()
+            if w < max_weight_allowed:
+                NEW.add_transition(state, target_st, in_sym, in_sym, 0)
+    RES = hfst.HfstTransducer(NEW)
+    RES.minimize()
     return RES
 
 def shuffle_with_zeros(string, target_length):
@@ -180,42 +183,47 @@ def multialign(strings, target_length, weighting):
         print("multialign:\n", RES)
     return RES
 
-def print_alignment(lst):
+def list_of_aligned_words(sym_lst):
     l = len(lst[0])
+    res = []
     for i in range(l):
-        syms = [itm[i:i+1] for itm in lst]
-        print(''.join(syms))
-    print()
-    return
+        syms = [itm[i:i+1] for itm in sym_lst]
+        res.append(''.join(syms))
+    return res
 
 if __name__ == "__main__":
     import argparse
     arpar = argparse.ArgumentParser("python3 multialign.py")
     arpar.add_argument("-l", "--layout",
-                       choices=['vertical','horizontal'],
+                       choices=['vertical','list','horizontal'],
                        help="output layout",
                        default="vertical")
     arpar.add_argument("-v", "--verbosity",
                        help="level of diagnostic output",
+                       type=int, default=0)
+    arpar.add_argument("-z", "--zeros",
+                       help="number of extra zeros beyond the minimum",
                        type=int, default=0)
     args = arpar.parse_args()
     verbosity = args.verbosity
     
     for line in sys.stdin:
         words = line.strip().split(sep=' ')
+        ##words = sorted(words, key=lambda w: -len(w))
         ml = max([len(x) for x in words])
         RES = hfst.empty_fst()
-        notyetfound = True
+        zeros = args.zeros
         for m in range(ml,ml+5):
             R = multialign(words, m, mphon_weight)
             if R.compare(hfst.empty_fst()):
+                if verbosity > 1:
+                    print("target length", m, "failed")
                 continue
             RES.disjunct(R)
             #RES.n_best(10)
             RES.minimize()
-            if notyetfound:
-                notyetfound = False
-            else:
+            zeros -= 1
+            if zeros < 0:
                 break
 
         RES.n_best(10)
@@ -249,6 +257,8 @@ if __name__ == "__main__":
         if args.layout == "horizontal":
             print(' '.join(best2))
         elif args.layout == "vertical":
-            print_alignment(best)
+            print('\n'.join(list_of_aligned_words(best)))
+        elif args.layout == 'list':
+            print(' '.join(list_of_aligned_words(best)))
         # print('  '.join(best2), zb)
     
