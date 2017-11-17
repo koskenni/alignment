@@ -113,7 +113,7 @@ speclist = ['k:c::0 k::0', 'k:x s:Ø::0', 't:d s:z::0', 'Ø:d s:z::3',
 
 all = vvlist + cclist + dbllist + sholist + dellist + epelist + speclist
 re = '[{}]*'.format(' | '.join(all))
-# print(re) ##
+print(re) ##
 algfst = hfst.regex(re)
 
 algfile = hfst.HfstOutputStream(filename="chardist.fst")
