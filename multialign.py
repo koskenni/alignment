@@ -32,7 +32,7 @@ def vowel_set_weight(subset):
         for sv in svs:
             if not subset <= semivowel_vowels[sv]:
                 w += 10
-    if ('Ø' in subset): w -= 0.6
+    ###if ('Ø' in subset): w -= 0.6
     return float(w)
 
 consonant_features = {
@@ -71,6 +71,7 @@ def cons_set_weight(subset):
     mm= set()
     for x in subset:
         if x == 'Ø':
+            #w += 2.6
             w += 2.6
         else:
             p, v, m = consonant_features[x]
@@ -81,7 +82,8 @@ def cons_set_weight(subset):
             vmin = min(vval, vmin)
             vmax = max(vval, vmax)
             mm.add(m)
-    w += (len(mm) - 1.0)
+    #w += (len(mm) - 1.0)
+    w += len(mm)
     w += (pmax - pmin)*0.5
     w += vmax - vmin
     # print(subset, w, pmin, pmax, vmin, vmax, mm) ###
@@ -99,7 +101,7 @@ def mphon_weight(mphon):
     else: phon_list = mphon.split(mphon_separator)
     phon_set = set(phon_list)
     if len(phon_set) == 1 and 'Ø' in phon_set:
-        weight = 1000.0
+        weight = 100.0
     elif phon_set <= consonants:
         # return float(len(phon_set))
         weight = cons_set_weight(phon_set)
@@ -168,7 +170,7 @@ def set_weights(FST, weighting):
         print("set_weights:\n", RES)
     return RES
 
-def multialign(strings, target_length, weighting):
+def multialign(strings, target_length, weighting, max_weight_allowed=1000.0):
     global verbosity
     s1 = strings[0]
     R = shuffle_with_zeros(s1, target_length)
@@ -176,7 +178,7 @@ def multialign(strings, target_length, weighting):
         S = shuffle_with_zeros(string, target_length)
         R.cross_product(S)
         T = fst_to_fsa(R)
-        R = remove_bad_transitions(T, weighting, 10000.0)
+        R = remove_bad_transitions(T, weighting, max_weight_allowed)
         R.minimize()
     RES = set_weights(R, weighting)
     if verbosity >=20:
@@ -184,12 +186,51 @@ def multialign(strings, target_length, weighting):
     return RES
 
 def list_of_aligned_words(sym_lst):
-    l = len(lst[0])
+    l = len(sym_lst[0])
     res = []
     for i in range(l):
         syms = [itm[i:i+1] for itm in sym_lst]
         res.append(''.join(syms))
     return res
+
+def aligner(words, max_zeros_in_longest, line, verbosity=0,
+                max_weight_allowed=1000.0):
+    max_length = max([len(x) for x in words])
+    RES = hfst.empty_fst()
+    for m in range(max_length, max_length + max_zeros_in_longest):
+        R = multialign(words, m, mphon_weight)
+        if R.compare(hfst.empty_fst()):
+            if verbosity > 1:
+                print("target length", m, "failed")
+            continue
+        RES.disjunct(R)
+        RES.minimize()
+    RES.n_best(10)
+    RES.minimize() # accepts 10 best results
+    results = RES.extract_paths(output='raw')
+    for w, sym_pair_seq in results:
+        lst = [isym for isym, outsym in sym_pair_seq]
+        if verbosity >= 5:
+            mpw = ["{}::{:.2f}".format(x, mphon_weight(x)) for x in lst]
+            print(" ".join(mpw), "total weight = {:.3f}".format(w))
+    if len(results) < 1:
+        print("***", line, "***", results)
+        return([])
+    best_weight = results[0][0]
+    best_bias = -1
+    for weight, sym_pair_seq in results:
+        if weight > best_weight: break
+        lst = [isym for isym,outsym in sym_pair_seq]
+        bias = 0
+        i = 0
+        for isym in lst:
+            bias = bias + i * isym.count('Ø')
+            i = i + 1
+        #print('  '.join(lst), w, bias) ##
+        if bias > best_bias:
+            best_bias = bias
+            best = lst
+    return best
 
 if __name__ == "__main__":
     import argparse
@@ -203,62 +244,23 @@ if __name__ == "__main__":
                        type=int, default=0)
     arpar.add_argument("-z", "--zeros",
                        help="number of extra zeros beyond the minimum",
-                       type=int, default=0)
+                       type=int, default=1)
     args = arpar.parse_args()
     verbosity = args.verbosity
     
     for line in sys.stdin:
         words = line.strip().split(sep=' ')
         ##words = sorted(words, key=lambda w: -len(w))
-        ml = max([len(x) for x in words])
-        RES = hfst.empty_fst()
-        zeros = args.zeros
-        for m in range(ml,ml+5):
-            R = multialign(words, m, mphon_weight)
-            if R.compare(hfst.empty_fst()):
-                if verbosity > 1:
-                    print("target length", m, "failed")
-                continue
-            RES.disjunct(R)
-            #RES.n_best(10)
-            RES.minimize()
-            zeros -= 1
-            if zeros < 0:
-                break
 
-        RES.n_best(10)
-        RES.minimize()
-        paths = RES.extract_paths(output='raw')
-        for w, path in paths:
-            lst = [isym for isym,outsym in path]
-            if verbosity >=5:
-                mpw = ["{}::{:.2f}".format(x, mphon_weight(x)) for x in lst]
-                print(" ".join(mpw), "total weight = {:.3f}".format(w))
-        if len(paths) < 1:
-            print("***", line, "***", paths)
-            continue
-        best_w = paths[0][0]
-        zb = -1
-        for w, path in paths:
-            if w > best_w: break
-            lst = [isym for isym,outsym in path]
-            z = 0
-            i = 0
-            for isym in lst:
-                z = z + i * isym.count('Ø')
-                i = i + 1
-            # print('  '.join(lst), w, z) ##
-            if z > zb:
-                zb = z
-                best = lst
+        best = aligner(words, args.zeros, line, args.verbosity)
+
         best2 = [re.sub(r'^([a-zšžüõåäö])\1\1*$', r'\1', cc) for cc in best]
-        # best2 = [re.sub(r'^([a-zšžüõåäöØ])([a-zšžüõåäöØ])$', r'\1:\2', cc) for cc in best]
-        # print(' '.join(best2), best_w, zb)
+        # print('best =', best2, "\n", ' '.join(best2)) ##
         if args.layout == "horizontal":
             print(' '.join(best2))
         elif args.layout == "vertical":
             print('\n'.join(list_of_aligned_words(best)))
         elif args.layout == 'list':
             print(' '.join(list_of_aligned_words(best)))
-        # print('  '.join(best2), zb)
+        # print('  '.join(best2), best_bias)
     
