@@ -1,0 +1,76 @@
+ALPHABET
+    i  =  Close Front Unrounded
+    y: =  Close Front Rounded
+    :ü =  Close Front Rounded  #  Estonian ü, IPA y
+    u  =  Close Back Rounded
+    e  =  CloseMid Front Unrounded
+    ö  =  CloseMid Front Rounded  #  IPA ø
+    o  =  CloseMid Back Rounded
+    :õ =  CloseMid Back Unrounded  #  Estonian õ, IPA ɤ
+    ä  =  OpenMid Front Unrounded  #  IPA æ
+    a  =  Open Back Unrounded  #  IPA ɑ
+
+    m  =  Bilabial Voiced Nasal
+    p  =  Bilabial Unvoiced Stop
+    b  =  Bilabial Voiced Stop
+    v  =  Labiodental Voiced Fricative
+    f  =  Labiodental Unvoiced Fricative
+    t  =  Dental Unvoiced Stop
+    s  =  Alveolar Unvoiced Sibilant
+    d  =  PostAlveolar Voiced Stop
+    n  =  PostAlveolar Voiced Nasal
+    š  =  PostAlveolar Unvoiced Sibilant  #  IPA ʃ
+    ž  =  PostAlveolar Voiced Sibilant  #  IPA ʒ
+    r  =  PostAlveolar Voiced Trill
+    l  =  PostAlveolar Voiced Lateral
+    j  =  Palatal Voiced Approximant  #  Close Front Unrounded
+    k  =  Velar Unvoiced Stop
+    g  =  Velar Voiced Stop
+    ŋ  =  Velar Voiced Nasal
+    h  =  Glottal Unvoiced Fricative
+
+#    Ø  =  Zero
+
+WITHIN
+    Close CloseMid OpenMid Open = 40
+    Close CloseMid = 20
+    CloseMid Open = 20
+    OpenMid Open = 0
+    #Approximant Close = 20
+    
+    Front Back = 10
+    
+    Unrounded Rounded = 10
+
+    Bilabial Labiodental Dental Alveolar PostAlveolar Palatal Velar Glottal = 50
+    Bilabial Labiodental = 10
+    Dental PostAlveolar = 10
+    Alveolar PostAlveolar Palatal = 10
+    Palatal Velar = 10
+    Velar Bilabial = 10
+    Velar Labiodental = 10
+    
+    Unvoiced Voiced = 10
+
+    Stop Fricative Sibilant Trill Lateral Approximant Nasal = 50
+    Stop Sibilant Fricative = 10
+    Sibilant Nasal = 10
+    Fricative Nasal = 10
+    Approximant Stop = 20
+    Stop Sibilant Lateral Trill = 10
+
+FOR ALL
+    X:Ø = 30
+    Ø:X = 30
+#    X X:Ø = 10
+    X Ø:X = 10
+
+EXCEPTIONS
+    o:õ = 10
+    o:õ Ø:õ = 10
+    i:j = 10
+    j:i = 10
+    u:v = 10
+    v:u = 10
+    k:x s:Ø = 0
+    t:z s:Ø = 0
