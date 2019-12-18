@@ -62,8 +62,9 @@ WITHIN
 FOR ALL
     X:Ø = 30
     Ø:X = 30
-#    X X:Ø = 10
-    X Ø:X = 10
+    X: X:Ø = 20
+    :X Ø:X = 20
+    X X:Ø = 20
 
 EXCEPTIONS
     o:õ = 10

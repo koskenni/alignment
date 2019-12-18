@@ -9,8 +9,12 @@ def main():
         help="FST which contains weights for preferring alternative alignments")
     arpar.add_argument(
         "-d", "--delimiter",
-        help="Delimiter between the two words to be aligned",
+        help="Separates the two cognates, default is ':'",
         default=":")
+    arpar.add_argument(
+        "-c", "--comment-separator",
+        help="Comment separator. Comments are ignored but copied to output. Default is '!'",
+        default="!")
     arpar.add_argument(
         "-l", "--layout",
         choices=["vertical","list","horizontal"],
@@ -18,12 +22,16 @@ def main():
         default="vertical")
     arpar.add_argument(
         "-n", "--number",
-        help="number of results to be printed",
+        help="number of best results to be printed. Default is 1",
         type=int, default=1)
     arpar.add_argument(
         "-w", "--weights",
-        help="print also the weight of each alignment",
+        help="print also the weight of each alignment. Default is not to print.",
         action="store_true")
+    arpar.add_argument(
+        "-v", "--verbosity",
+        help="Level of diagnostic information to be printed. Default is 0",
+        type=int, default=0)
 
     args = arpar.parse_args()
 
@@ -34,10 +42,12 @@ def main():
     separator = args.delimiter
     import sys
     for line in sys.stdin:
-        lst =  line.strip().split(sep=separator)
-        if len(lst) == 2:
-            f1,f2 = lst
-        else: f1,f2 = lst[0],lst[0]
+        pair, comm, comments = line.strip().partition(args.comment_separator)
+        if args.verbosity > 0:
+            print(pair, args.comment_separator, comm)
+        f1, sep, f2 =  pair.strip().partition(args.delimiter)
+        if not f2:
+            f2 = f1
 
         w1 = hfst.fst(f1)
         w1.insert_freely(("Ø","Ø"))
@@ -69,16 +79,19 @@ def main():
             inword, colon, outword = pair.partition(":")
             if not colon:
                 outword = inword
-            if args.weights:
-                weight = "\t" + weight
-            else:
-                weight = ""
+            tab = "\t" if args.weights else ""
             if args.layout == "list":
-                print(inword + "\t" + outword + weight)
+                print(inword + "\t" + outword + tab + weight)
             elif args.layout == "vertical":
-                print(inword )
-                print(outword)
-                print(weight)
+                if args.weights:
+                    print(inword.ljust(35), weight)
+                else:
+                    print(inword )
+                if comments and args.comment_separator:
+                    print(outword.ljust(40), comments)
+                else:
+                    print(outword)
+                print()
             else:                       # horizontal
                 lst = []
                 for inch, outch in zip(inword, outword):
@@ -87,7 +100,14 @@ def main():
                     else:
                         pair = inch + outch
                     lst.append(pair)
-                print(" ".join(lst) + weight)
+                algh = " ".join(lst)
+                if args.weights:
+                    comments = weight.rjust(4) + " " + comments
+                if args.comment_separator:
+                    comments = comments + " | " + f1 + " " + f2
+                    algh = algh.ljust(30) + args.comment_separator + comments
+                
+                print(algh)
 
     return
 

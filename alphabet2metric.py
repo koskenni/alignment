@@ -8,8 +8,7 @@ output_phonemes = set()
 within_set_lst = []
 forall_lst = []
 
-pair_set = set()
-pair_weight_lst = []
+pair_weight_dict = {}
 
 def deduce_weights():
     for insym in sorted(input_phonemes):
@@ -40,10 +39,7 @@ def deduce_weights():
                 for s, w in wdict.items():
                     sum += w
                 #print(insym, outsym, sum, wdict) ###
-                
-                pair_weight_lst.append("{}:{}::{}".format(insym, outsym, sum))
-                pair_set.add((insym, outsym))
-                #print("pair_weight_lst:", pair_weight_lst) ###
+                pair_weight_dict[(insym, outsym)] = sum
     return
 
 def read_alphabet(file_name):
@@ -100,23 +96,48 @@ def read_alphabet(file_name):
                 feat_lst = feat_str.strip().split()
                 for feat in feat_lst:
                     if feat not in feature_set:
-                        sys.exit("FEATURE", feat, "NOT DEFINED", line)
+                        sys.exit("FEATURE '" + feat + "' NOT DEFINED: " + line)
                 i += 1
                 within_set_lst.append((frozenset(feat_lst), w, i))
                 line = line_lst.popleft()
-            print("within_set_lst:", within_set_lst) ###
+            #print("within_set_lst:", within_set_lst) ###
             deduce_weights()
         elif line == "FOR ALL":
             all_var = "X"
             line = line_lst.popleft()
             while line not in keywords and line_lst:
-                if all_var in line:
-                    for var in sorted(input_phonemes & output_phonemes):
-                        lin = line.replace(all_var, var)
-                        lin = re.sub(r" *= *", "::", lin)
-                        forall_lst.append(lin)
-                else:
-                    exit("*** X MISSING: " + line)
+                sym_pair_str, equal, w = line.partition("=")
+                sym_pair_lst = sym_pair_str.strip().split()
+                w1 = int(w)
+                if not "X" in line or not w:
+                    sys.exit("*** X MISSING: " + line)
+                s = set()
+                for (insym, outsym), w2 in pair_weight_dict.items():
+                    new_lst = []
+                    for sym_pair in sym_pair_lst:
+                        pre, x, post = sym_pair.partition("X")
+                        #print(pre, x, post) ###
+                        if not pre and x and not post:
+                            if insym == outsym:
+                                new_lst.append(insym)
+                        elif not x:
+                            new_lst.append(sym_pair)
+                        elif pre == ":":
+                            new_lst.append(insym + ":" + outsym)
+                        elif pre.endswith(":"):
+                            new_lst.append(pre + outsym)
+                        elif post == ":":
+                            new_lst.append(insym + ":" + outsym )
+                        elif post.startswith(":"):
+                            new_lst.append(insym + post)
+                        else:
+                            sys.exit("*** INCORRECT " + sym_pair + " IN FOR ALL LINE:\n" + line)
+                    ww = w1 if len(sym_pair_lst) <= 1 else w1 + w2
+                    symstr = " ".join(new_lst) + "::" + str(ww)
+                    s.add(symstr)
+                    #print(symstr) ###
+                for symstr in s:
+                    forall_lst.append(symstr)
                 line = line_lst.popleft()
         elif line == "EXCEPTIONS":
             line = line_lst.popleft()
@@ -129,16 +150,36 @@ def read_alphabet(file_name):
     return
 
 def main():
-    read_alphabet("alphabet-fi-et.text")
+    import argparse
+    arpar = argparse.ArgumentParser(
+        description="Builds a distance metric FST")
+    arpar.add_argument(
+        "alphabet",
+        help="An alphabet definition with features and similarity sets")
+    arpar.add_argument(
+        "metrics",
+        help="FST which contains weights for preferring alternative alignments")
+    arpar.add_argument(
+        "-d", "--delimiter",
+        help="Delimiter between the two words to be aligned",
+        default=":")
+    args = arpar.parse_args()
+
+    read_alphabet(args.alphabet)
+    pair_weight_lst = []
+    for insym, outsym in pair_weight_dict.keys():
+        w = pair_weight_dict[(insym, outsym)]
+        pair_weight_lst.append("{}:{}::{}".format(insym, outsym, w))
     pair_weight_str = "|".join(pair_weight_lst)
-    print(pair_weight_str) ###
+    #print(pair_weight_str) ###
     forall_str = "|".join(forall_lst)
-    print(forall_str) ###
+    #print(forall_str) ###
 
     import hfst
     fst = hfst.regex(pair_weight_str + "|" + forall_str)
     fst.repeat_star()
-    fstfile = hfst.HfstOutputStream(filename="metric.fst")
+    fst.minimize()
+    fstfile = hfst.HfstOutputStream(filename=args.metrics)
     fstfile.write(fst)
     fstfile.flush()
     fstfile.close()
