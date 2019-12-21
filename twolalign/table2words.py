@@ -1,32 +1,41 @@
 """Reformats a paradigm table into a one word form per row csv file
 
-© Kimmo Koskenniemi, 2017-2018. This is free software under GPL 3 license.
+© Kimmo Koskenniemi, 2017-2019
+
+ This is free software under GPL 3 license.
 """
 
 def step1():
     import csv, re, sys
 
     import argparse
-    argparser = argparse.ArgumentParser("python3 paratab2segcsv.py",
-                                        description="Converts a tabular csv paradigm into a example per row as a CSV file")
-    argparser.add_argument("input",
-                            default="ksk-paradigms.csv",
-                            help="paradigm table as a CSV file")
-    argparser.add_argument("output",
-                            default="ksk-seg-examp.csv",
-                            help="one example per row paradigm as a CSV file")
-    argparser.add_argument("-s", "--morph-separator",
-                            default=".",
-                            help="separator between morphs in the word form")
-    argparser.add_argument("-d", "--csv-delimiter",
-                            default=",",
-                            help="delimiter between the two fields")
-    argparser.add_argument("-n", "--name-separator",
-                            default=" ",
-                            help="separator between morpheme names in the morpheme list")
-    argparser.add_argument("-z", "--zero-symbol",
-                            default="Ø",
-                            help="symbol to be inserted in word forms in order to align them")
+    argparser = argparse.ArgumentParser(
+        "python3 paratab2segcsv.py",
+        description="Converts a tabular csv paradigm into a example per row as a CSV file")
+    argparser.add_argument(
+        "input",
+        default="ksk-paradigms.csv",
+        help="Paradigm table as a CSV file")
+    argparser.add_argument(
+        "output",
+        default="ksk-seg-examp.csv",
+        help="One example per row paradigm as a CSV file")
+    argparser.add_argument(
+        "-s", "--morph-separator",
+        default=".",
+        help="Boundary between the morphs in a table cell")
+    argparser.add_argument(
+        "-d", "--csv-delimiter",
+        default=",",
+        help="CSV delimiter between the two fields, default is ','")
+    argparser.add_argument(
+        "-n", "--name-separator",
+        default=" ",
+        help="Separator between morpheme names in the morpheme list, default is ' '")
+    argparser.add_argument(
+        "-z", "--zero-symbol",
+        default="Ø",
+        help="symbol to be inserted in word forms in order to align them, default is Ø")
     args = argparser.parse_args()
 
     out_file = open(args.output, "w")

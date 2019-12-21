@@ -1,5 +1,9 @@
 """Aligns multiple morphs according to phonological features
 by adding zero symbols.
+
+Copyright 2019, Kimmo Koskenniemi
+
+This is free software according to GNU GPL 3 License.
 """
 
 import re, sys

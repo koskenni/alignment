@@ -20,9 +20,9 @@ setuptools.setup(
     ],
     entry_points={
         "console_scripts": [
-            "twol-aligner = twolalign.aligner:main",
-            "twol-multialign = twolalign.multialig:main",
-            "twol-table2words = twolalign.table2words:main",
+            # "twol-aligner = twolalign.aligner:main",
+            # "twol-multialign = twolalign.multialig:main",
+            "twol-table2words = twolalign.table2words:step1",
         ]
     },
     python_requires='>=3.6',
