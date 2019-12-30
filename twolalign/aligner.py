@@ -1,4 +1,12 @@
-# aligner.py
+""" aligner.py
+
+Aligns two words (or morphs) by adding some zero symbols so that
+phonemes in corresponding positions are optimally similar.
+
+Copyright 2017-2019, Kimmo Koskenniemi
+
+This is free software according to GNU GPL 3 license.
+"""
 
 def main():
     import argparse

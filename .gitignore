@@ -2,3 +2,6 @@
 *.fst
 *.ofst
 *.log
+build/*
+dist/*
+twolalign.egg-info/*

@@ -463,25 +463,24 @@ def aligner(words, max_zeros_in_longest, line):
         best = best_syl_struct[0]
     return best
 
-if __name__ == "__main__":
+def main():
     import argparse
     arpar = argparse.ArgumentParser("python3 multialign.py")
     arpar.add_argument("-l", "--layout",
         choices=["vertical","list","horizontal"],
-        help="output layout",
+        help="Output layout",
         default="vertical")
     arpar.add_argument("-f", "--final",
-        help="prefer deletion at the end",
-        action="store_false"
-    )
+        help="Prefer deletion at the end",
+        action="store_false")
     arpar.add_argument("-v", "--verbosity",
-        help="level of diagnostic output",
+        help="Level of diagnostic output",
         type=int, default=0)
     arpar.add_argument("-a", "--alphabet",
-        help="level of diagnostic output",
+        help="A file which defines the phonemes through their distinctive features",
         default="")
     arpar.add_argument("-z", "--zeros",
-        help="number of extra zeros beyond the minimum",
+        help="Number of extra zeros allowed beyond the minimum",
         type=int, default=1)
     args = arpar.parse_args()
     cfg.verbosity = args.verbosity
@@ -524,4 +523,7 @@ if __name__ == "__main__":
             print()
         elif args.layout == "list":
             print(" ".join(list_of_aligned_words(best)))
-    
+    return
+
+if __name__ == "__main__":
+    main()
