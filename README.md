@@ -5,14 +5,22 @@ Methods for careful letter by letter alignment for e.g. cognate words in histori
 
 In the present context, alignment is the process of inserting some zero symbols in the words so that the letters or phonemes in the corresponding positions of the words are phonologically as similar as possible, e.g. a Finnish word "kieli" and an Estonian word "keel" could be aligned by inserting a zero symbol 'Ø':
 
-  k i e l i
-  k e e l Ø
+    k i e l i
+    k e e l Ø
 
 Now there are pairs of identical phonemes (k:k, e:e and l:l) and one modification of a vowel (i:e) and the deletion of a word-final vowel (i:Ø).
 
 ## Contents of this repository
 
-There are stand-alone Python 3 programs which can be used for aligning individual words
+There are stand-alone Python 3 programs which can be used for aligning individual words:
+
+1. ``aligner.py`` and ``metrics.py`` with which you can compare cognate words of two languages. The latter reads an alphabet definition and writes a weighted finite-state transducer (WFST) which the former program needs for the concrete alignment.
+
+2. ``multialign.py`` compares two or more corresponding words or morphs and aligns them.
+
+There is a suite of stand-alone programs for building morphophonemic representations of morphemes.  The input consists of inflected word forms given as a table where individual cells contain the word forms where morph boundaries are indicated.  The forms with the same stem are given as a row of the table and different forms correspond to the columns of the table.  The programs are:
+
+3. twol
 
 ## Licenses
 
