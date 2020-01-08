@@ -9,249 +9,9 @@ This is free software according to GNU GPL 3 License.
 import re, sys
 import hfst
 import grapheme
+import alphabet
 import cfg
 import fs
-
-vowel_features = {
-    "j":("Semivowel","Front","Unrounded"),
-    "i":("Close","Front","Unrounded"),
-    "y":("Close","Front","Rounded"),
-    "ü":("Close","Front","Rounded"),      # Estonian, IPA y
-    "u":("Close","Back","Rounded"),
-    "õ":("Mid","Back","Unrounded"),       # Estonian - IPA ɤ (Close-Mid, Back, Unrounded)
-    "e":("Mid","Front","Unrounded"),
-    "ö":("Mid","Front","Rounded"),        # IPA ø
-    "o":("Mid","Back","Rounded"),
-    "á":("Open","Front","Unrounded"),     # Inari Sami, IPA a
-    "ä":("Open","Front","Unrounded"),     # Estonian, æ
-    "â":("Open","Central","Unrounded"),   # Inari Saami, IPA ɐ
-    "a":("Open","Back","Unrounded"),      # Finnish, IPA ɑ
-    "´":("Length","Length","Length"),
-    "Ø":("Zero","Zero","Zero")
-    }
-
-"""Phonological distinctive features of vowels which can be used of
-estimating similarities between phonemes."""
-
-#cmo = {"Semivowel":0.0, "Close":1.0, "Mid":2.0, "Open":3.0}
-#fb = {"Front":1, "Back":2}
-#ur = {"Unrounded":1, "Rounded":2}
-vowels = set(vowel_features.keys())
-
-semivowels = {"j", "w"}
-semivowel_vowels = {"j": frozenset(["i", "j", "Ø"]),
-                    "w": frozenset(["u", "o", "w", "Ø"])
-}
-
-def vowel_set_weight(subset):
-    w = len(subset)
-    svs = subset.intersection(semivowels)
-    if svs:
-        for sv in svs:
-            if not subset <= semivowel_vowels[sv]:
-                w += 10
-    if ("Ø" in subset): w -= 0.6
-    return float(w)
-
-consonant_features = {
-    "m":("Bilab","Voiced","Nasal"),
-    "p":("Bilab","Unvoiced","Stop"),
-    "b":("Bilab","Voiced","Stop"),
-    "v":("Labdent","Voiced","Fricative"),
-    "f":("Labdent","Unvoiced","Fricative"),
-    "w":("Labdent","Voiced","Fricative"),
-    "đ":("Dental","Voiced","Fricative"),
-    "d̕":("Dental","Voiced","Fricative"),
-    "n":("Alveolar","Voiced","Nasal"),
-    "z":("Alveolar","Voiced","Affricate"),
-    # "c":("Alveolar","Unvoiced","Affricate"),
-    "t":("Alveolar","Unvoiced","Stop"),
-    "z":("Alveolar","Unvoiced","Stop"),
-    "ž":("Alveolar","Unvoiced","Stop"),
-    "d":("Alveolar","Voiced","Stop"),
-    "š":("Postalveolar","Unvoiced","Fricative"),
-    "č":("Postalveolar","Unvoiced","Affricate"),
-    "s":("Alveolar","Unvoiced","Sibilant"),
-    "š":("Alveolar","Unvoiced","Sibilant"), # IPA ʃ
-    "ž":("Alveolar","Voiced","Sibilant"),
-    "l":("Alveolar","Voiced","Lateral"),
-    "r":("Alveolar","Voiced","Tremulant"),
-    "c":("Palatal","Unvoiced","Stop"), # Hungarian ty ƭ
-    "ɉ":("Palatal","Voiced","Stop"), # Hungarian gy ɠ
-    "j":("Palatal","Voiced","Approximant"),
-    "ñ":("Palatal", "Voiced", "Nasal"),
-    "ŋ":("Velar","Voiced","Nasal"), # Inari Sami
-    "k":("Velar","Unvoiced","Stop"),
-    "c":("Velar","Unvoiced","Stop"),
-    "x":("Velar","Unvoiced","Stop"), ##
-    "g":("Velar","Voiced","Stop"),
-    "h":("Glottal","Unvoiced","Fricative"),
-    "`":("Zero", "Zero", "Zero"),
-    "Ø":("Zero", "Zero", "Zero")
-}
-
-"""Phonological distinctive features of consonants to be used when
-estimating similarities between phonemes.  """
-
-pos = {"Bilab":0.0, "Labdent":1.0, "Dental":1.5, "Alveolar":2.0,
-        "Postalveolar":2.3, "Alveopalatal":2.6, "Palatal":3.0, "Velar":3.0, "Glottal":4.0}
-voic = {"Unvoiced":1, "Voiced":2}
-consonants = set(consonant_features.keys())
-
-def read_alphabet(file_name):
-    global vowel_features, consonant_features, semivowels, semivowel_vowels, vowels, consonants
-    from collections import deque
-    af = open(file_name, "r")
-    line_lst = deque([])
-    for line_nl in af:
-        if line_nl.strip().startswith("#"):
-            continue            # skip comments
-        line = line_nl.strip().split("#")[0]
-        if line:
-            line_lst.append(line) # skip empty lines
-    keywords = {"VOWELS", "CONSONANTS", "SEMIVOWELS", "GROUPS", "END"}
-    line = line_lst.popleft()
-    vowel_features.clear()
-    while line_lst:
-        if line == "VOWELS":
-            line = line_lst.popleft()
-            while line not in keywords and line_lst:
-                lst = line.split()
-                if len(lst) == 4:
-                    vowel_features[lst[0]] = tuple(lst[1:])
-                    line = line_lst.popleft()
-                else:
-                    print("***", line)
-                    exit()
-        elif line == "CONSONANTS":
-            consonant_features.clear()
-            line = line_lst.popleft()
-            while line not in keywords and line_lst:
-                lst = line.split()
-                if len(lst) == 4:
-                    consonant_features[lst[0]] = tuple(lst[1:])
-                    line = line_lst.popleft()
-                else:
-                    print("***", line)
-                    exit()
-        elif line == "SEMIVOWELS":
-            semivowels = set()
-            semivowel_vowels.clear()
-            line = line_lst.popleft()
-            while line not in keywords and line_lst:
-                lst = line.split()
-                if len(lst) >= 2:
-                    semivowels.add(lst[0])
-                    ls = lst[1:]
-                    ls.append("Ø")
-                    ls.append(lst[0])
-                    semivowel_vowels[lst[0]] = frozenset(ls)
-                    line = line_lst.popleft()
-                else:
-                    print("***", line)
-                    exit()
-        elif line == "GROUPS":
-            line = line_lst.popleft()
-            while line not in keywords and line_lst:
-                line = line_lst.popleft()
-
-    vowels = set(vowel_features.keys())
-    consonants = set(consonant_features.keys())
-    return
-
-def cons_set_weight(subset):
-    """Computes a weight for a subset of consonants."""
-    w = 0.0
-    pmin, pmax = 100.0, 0.0
-    vmin, vmax = 100.0, 0.0
-    mm= set()
-    if subset == {"'"}:
-        return 0
-    elif subset == {"'", "Ø"}:
-        return 1.5
-    for x in subset:
-        if x in {"Ø", "`"}:
-            #w += 2.6
-            w += 1.5
-        elif x == "'":
-            w += 10
-        else:
-            p, v, m = consonant_features[x]
-            pval = pos[p]
-            pmin = min(pval, pmin)
-            pmax = max(pval, pmax)
-            vval = voic[v]
-            vmin = min(vval, vmin)
-            vmax = max(vval, vmax)
-            mm.add(m)
-    #w += (len(mm) - 1.0)
-    w += len(mm) * 0.5
-    w += (pmax - pmin) * 0.6
-    w += (vmax - vmin)
-    # print(subset, w, pmin, pmax, vmin, vmax, mm) ###
-    return w
-
-mphon_separator = ""
-"""Separator used when forming names of raw morphophonemes"""
-
-weight_cache = {}
-
-def mphon_weight(mphon):
-    """Computes a weight for a raw morphophoneme"""
-    global  vowels, consonants, mphon_separator, weight_cache
-    if mphon in weight_cache:
-        return weight_cache[mphon]
-    if mphon_separator == "":
-        phon_list = grapheme.graphemes(mphon)
-    else:
-        phon_list = mphon.split(mphon_separator)
-    phon_set = set(phon_list)
-    if cfg.verbosity >= 30:
-        print("phon_set =", phon_set)
-    if phon_set == {"Ø"}:
-    #    weight = 100.0        # all-zero morphophonemes must be allowed
-        weight = cfg.all_zero_weight
-    elif len(phon_set) == 1:
-        weight = 0.0
-    elif phon_set <= consonants:
-        weight = cons_set_weight(phon_set)
-    elif phon_set <= vowels:
-        weight = vowel_set_weight(phon_set)
-    else:
-        #weight = float("Infinity")
-        weight = 1000000.0
-    weight_cache[mphon] = weight
-    if cfg.verbosity >= 35:
-        print("mphon:", mphon, "weight:", weight)
-    return weight
-
-def mphon_is_valid(mphon):
-    """Tests if a raw morphophoneme is all consonants or all vowels"""
-    global  vowels, consonants, mphon_separator
-    if mphon_separator == "":
-        phon_list = grapheme.graphemes(mphon)
-    else:
-        phon_list = mphon.split(mphon_separator)
-    phon_set = set(phon_list)
-    if phon_set <= vowels:
-        return True
-    elif phon_set <= consonants:
-        return True
-    else:
-        return False
-
-def fst_to_fsa(FST):
-    global mphon_separator
-    FB = hfst.HfstBasicTransducer(FST)
-    sym_pairs = FB.get_transition_pairs()
-    dict = {}
-    for sym_pair in sym_pairs:
-        in_sym, out_sym = sym_pair
-        joint_sym = in_sym + mphon_separator + out_sym
-        dict[sym_pair] = (joint_sym, joint_sym)
-    FB.substitute(dict)
-    RES = hfst.HfstTransducer(FB)
-    return RES
 
 def remove_bad_transitions(fsa):
     """Copy the FSA excluding transitions with consonants and vowels"""
@@ -263,7 +23,9 @@ def remove_bad_transitions(fsa):
             new_bfsa.set_final_weight(state, 0.0)
         for arc in old_bfsa.transitions(state):
             in_sym = arc.get_input_symbol()
-            if mphon_is_valid(in_sym):
+            ##print(in_sym, "is")#####
+            if alphabet.mphon_is_valid(in_sym):
+                ##print("valid")#####
                 target_st = arc.get_target_state()
                 new_bfsa.add_transition(state, target_st, in_sym, in_sym, 0)
     result_fsa = hfst.HfstTransducer(new_bfsa)
@@ -306,7 +68,7 @@ def set_weights(fsa):
             tostate = arc.get_target_state()
             insym = arc.get_input_symbol()
             outsym = arc.get_output_symbol()
-            w = mphon_weight(insym)
+            w = alphabet.mphon_weight(insym)
             arc.set_weight(w)
     weighted_fsa = hfst.HfstTransducer(bfsa)
     if cfg.verbosity >=20:
@@ -328,7 +90,7 @@ def multialign(strings, target_length):
         fsa.cross_product(suf_fsa)      # results in a transducer
         if cfg.verbosity >=30:
             print("fsa\n", fsa)
-        prod_fsa = fst_to_fsa(fsa)      # encodes the fst as a fsa
+        prod_fsa = hfst.fst_to_fsa(fsa)      # encodes the fst as a fsa
         fsa = remove_bad_transitions(prod_fsa)
         fsa.minimize()
     wfsa = set_weights(fsa)
@@ -372,7 +134,7 @@ def prefer_final_zeros(sym_lst_lst):
 
 def classify_sym(sym):
     char_set = set(sym)
-    if char_set <= consonants:
+    if char_set <= alphabet.consonant_set:
         if "Ø" in char_set:
             return "c"
         else: return "C"
@@ -380,8 +142,8 @@ def classify_sym(sym):
         return "v"
     else: return "V"
 
-consonant_lst = sorted(list(consonants))
-vowel_lst =sorted(list(vowels))
+consonant_lst = sorted(list(alphabet.consonant_set))
+vowel_lst =sorted(list(alphabet.vowel_set))
 consonant_re = "(" + "|".join(consonant_lst) + ")"
 vowel_re = "(" + "|".join(vowel_lst) + ")"
 
@@ -445,13 +207,13 @@ def aligner(words, max_zeros_in_longest, line):
             continue
         weighted_fsa.disjunct(R)
         weighted_fsa.minimize()
-    weighted_fsa.n_best(10)
+    weighted_fsa.n_best(10) 
     weighted_fsa.minimize() # accepts 10 best results
     results = weighted_fsa.extract_paths(output="raw")
     if cfg.verbosity >= 5:
         for w, sym_pair_seq in results:
             lst = [isym for isym, outsym in sym_pair_seq]
-            mpw = ["{}::{:.2f}".format(x, mphon_weight(x)) for x in lst]
+            mpw = ["{}::{:.2f}".format(x, alphabet.mphon_weight(x)) for x in lst]
             print(" ".join(mpw), "total weight = {:.3f}".format(w))
     if len(results) < 1:
         print("*** NO ALIGNMENTS FOR:", line, "***", results)
@@ -473,6 +235,13 @@ def main():
     arpar.add_argument("-f", "--final",
         help="Prefer deletion at the end",
         action="store_false")
+    arpar.add_argument("-w", "--weights",
+        help="Print the weight of the alignment",
+        action="store_true")
+    arpar.add_argument("-c", "--comments",
+        help="Copy input words to the output lines as comments",
+        default=False,
+        action="store_true")
     arpar.add_argument("-v", "--verbosity",
         help="Level of diagnostic output",
         type=int, default=0)
@@ -486,13 +255,8 @@ def main():
     cfg.verbosity = args.verbosity
 
     if args.alphabet:
-        read_alphabet(args.alphabet)
-    if cfg.verbosity >= 10:
-        print("vowel_features:", vowel_features)
-        print("consonant_features:", consonant_features)
-        print("semivowels", semivowels)
-        print("semivowel_vowels", semivowel_vowels)
-    
+        alphabet.read_alphabet(args.alphabet)
+    valid_letters = alphabet.vowel_set | alphabet.consonant_set | set(" ")
     for line in sys.stdin:
         line = line.strip()
         lst = line.split("!", maxsplit=1)
@@ -501,13 +265,20 @@ def main():
             number = lst[1].strip() + " "
         else:
             number = ""
+        if set(line) - valid_letters:
+            print("** SOME LETTERS NOT VALID:",
+                  set(line) - valid_letters,
+                  "ON LINE: ", line)
+            continue
         words = line.split()
         comment = number + " ".join(words)
             
-        best = aligner(words, args.zeros, line)
-
-        #best2 = [re.sub(r"^([a-zšžŋđüõåäöáâ`´])\1\1*$", r"\1", cc)
-        #         for cc in best]
+        best = aligner(words, args.zeros, line) # returns a list of morphoponemes
+        if args.weights:
+            weight = 0
+            for mphon in best:
+                weight += alphabet.mphon_weight(mphon)
+            comment = "{:.2f} ".format(weight) + comment
 
         if args.layout == "horizontal":
             mphonemic_best = []
@@ -515,7 +286,10 @@ def main():
                 grapheme_list = list(grapheme.graphemes(cc))
                 lab = grapheme_list[0] if len(set(grapheme_list)) == 1 else cc
                 mphonemic_best.append(lab)
-            print(" ".join(mphonemic_best).ljust(40),"!", comment)
+            if args.comments:
+                print(" ".join(mphonemic_best).ljust(40),"!", comment)
+            else:
+                print(" ".join(mphonemic_best))
         elif args.layout == "vertical":
             #print("best:", best) ###
             #print("len(best):", [len(x) for x in best]) ###
