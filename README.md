@@ -30,6 +30,8 @@ There is a suite of stand-alone programs for building morphophonemic representat
 
 6. ``twol-raw2named`` reads in the output of the above program and a table of user-given shorter names for some raw morphophonemes and writes out the examples as two-level symbol pairs, one example per line.  The examples now consist of a sequence of symbol pairs where the first component of a pair is the morphophoneme and the second component is the surface character.  This file is used by the two-level compiler in conjunction with the rules which the linguist now can start to design.
 
+More information on these programs can be found at: https://pytwolc.readthedocs.io/en/latest/morphophon.html
+
 ## Licenses
 
 The programs aligner.py, charmetric.py and multialign.py are written by Kimmo Koskenniemi alone and he has the copyright to these programs. The programs are free software according to the GNU General Public License Version 3, 29 June 2007, see LICENSE.txt in this repository or https://www.gnu.org/licenses/gpl-3.0.en.html for the full text of the license.

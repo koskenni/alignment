@@ -5,13 +5,13 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="twolalign",
-    version="0.0.6",
+    version="0.0.7",
     author="Kimmo Koskenniemi",
     author_email="koskenni@gmail.com",
     description="Aligning words in the two-level framework",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/koskenni/align",
+    url="https://github.com/koskenni/alignment",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
