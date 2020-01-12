@@ -23,13 +23,13 @@ ALPHABET
     ž  =  PostAlveolar Voiced Sibilant  #  IPA ʒ
     r  =  PostAlveolar Voiced Trill
     l  =  PostAlveolar Voiced Lateral
-    j  =  Palatal Voiced Approximant  #  Close Front Unrounded
+    j  =  Palatal Voiced Approximant  #  Semivowel Front Unrounded
     k  =  Velar Unvoiced Stop
     g  =  Velar Voiced Stop
     ŋ  =  Velar Voiced Nasal
     h  =  Glottal Unvoiced Fricative
 
-#    Ø  =  Zero
+#    Ø  =  Zero Zero Zero Zero Zero Zero
 
 WITHIN
     Close CloseMid OpenMid Open = 40

@@ -18,6 +18,8 @@ full_bin_to_phoneme_set = {} # gives the phoneme set previously stored
 vowel_set = set()            # set of vowels including semivowels
 consonant_set = set()        # set of consonants including semivowels
 mphon_weight = {}            # a cache for morphophoneme weights
+for_definitions_lst = []     # list of ... FOR X IN ... definitions
+exception_lst = []         # list of weighting exceptions
 
 def spaced_bin_int(intg):
     bs = "{:096b}".format(intg)
@@ -30,7 +32,8 @@ def mphon_weight(mphon):
         return 999999
     mphon_int = phoneme_to_full_bin[mphon]
     if cfg.verbosity > 10:
-        print("\nphoneme_to_full_bin[{}] = {}".format(mphon, spaced_bin_int(mphon_int)))
+        print("\nphoneme_to_full_bin[{}] = {}".format(mphon,
+                                                      spaced_bin_int(mphon_int)))
     high = mphon_int >> 48               # extract consonantal feature bits
     if high:
         c1 = high >> 32                  # place of articulation set
@@ -105,36 +108,50 @@ def read_alphabet(file_name):
             line = line_nl.split("#")[0].strip()
             if not line:
                 continue
-            lst = line.split("=")
-            if len(lst) != 2:
-                msg = "** = MISSING ON LINE {}:\n {}".format(i, line_nl)
-                sys.exit(msg)
-            lhs = lst[0].strip()
-            rhs = lst[1].strip()
-            if len(lhs) == 1:    # it defines features of a phoneme
-                r_lst = [feat.strip() for feat in rhs.split(",")]
+            mat1 = re.fullmatch(r":?(?P<symbol>\w):? *= *(?P<feats>\w*( *, *\w*)+)",
+                                line)
+            if mat1:            # it defines features of a phoneme
+                r_lst = [feat.strip() for feat in mat1.group("feats").split(",")]
                 if len(r_lst) != 6:
-                    msg = "** WRONG NUMBER OF FEATURES ON LINE {}:\n{}".format(i, line)
-                    sys.exit(msg)
-                if lhs in features_of_phoneme:
-                    msg = "** {} ALREADY DEFINED. LINE {}:\n{}".format(lhs, i, line_nl)
-                    sys.exit(msg)
-                features_of_phoneme[lhs] = tuple(r_lst)
+                    msg = "** WRONG NUMBER OF FEATURES ON LINE {}:\n{}"
+                    sys.exit(msg.format(i, line))
+                if mat1.group("symbol") in features_of_phoneme:
+                    msg = "** {} ALREADY DEFINED. LINE {}:\n{}"
+                    sys.exit(msg.format(mat1.group("symbol"), i, line_nl))
+                features_of_phoneme[mat1.group("symbol")] = tuple(r_lst)
                 for ls, feat in zip(feature_lst_lst, r_lst):
                     if not feat in ls and feat:
                         ls.append(feat)
-            elif re.fullmatch(r"[0-9]+", rhs) and not lhs.endswith("+"):
+                continue
+            mat2 = re.fullmatch(r"(?P<elements>\w+( +\w+)+) *= *(?P<weight>[0-9]+)",
+                                line)
+            if mat2:
                 # it defines a subset and its weight
-                l_lst = lhs.split()
-                subset_lst.append((set(l_lst), int(rhs)))
-            elif lhs.startswith("Zero") and lhs.endswith("+") and re.fullmatch(r"[0-9]+ +[0-9]+", rhs):
+                l_lst = mat2.group("elements").split()
+                subset_lst.append((set(l_lst), int(mat2.group("weight"))))
+                continue
+            mat3 = re.fullmatch(r"Zero *[+]= *(?P<consw>[0-9]+) +(?P<voww>[0-9]+)",
+                                line)
+            if mat3:
                 # it defines the cost of including a Zero in sets
-                ls = rhs.split()
-                cost_of_zero_c = int(ls[0])
-                cost_of_zero_v = int(ls[1])
-            else:
-                msg = "** SOME ERROR ON LINE {}:\n{}".format(i, line)
-                sys.exit(msg)
+                cost_of_zero_c = int(mat3.group("consw"))
+                cost_of_zero_v = int(mat3.group("voww"))
+                continue
+            mat4 = re.fullmatch(
+                r"(?P<expr>(\w:\w +)*\w:\w::[0-9]+) +FOR +(?P<var>\w+) +IN +(?P<set>\w+)",
+                line)
+            if mat4:
+                # it defines a FOR IN definition
+                for_definitions_lst.append((mat4.group("expr"),
+                                           mat4.group("var"), mat4.group("set")))
+                continue
+            mat5 = re.fullmatch("(?P<expr>(\w:\w +)*\w:\w::[0-9]+)", line)
+            if mat5:
+                exception_lst.append(mat5.group("expr"))
+                continue
+            msg = "** INCORRECT ALPHABET DEFINITON LINE {}:\n {}"
+            sys.exit(msg.format(i, line_nl))
+
     feature_set_lst = [set(lst) for lst in feature_lst_lst]
     #
     # now the alphabet data has been read in and extracted
@@ -146,6 +163,8 @@ def read_alphabet(file_name):
         print("\nfeature_lst_lst:", feature_lst_lst)
         print("\nsubset_lst:", subset_lst)
         print("\nfeatures_of_phoneme:", features_of_phoneme)
+        print("\nfor_definitions_lst:", for_definitions_lst)
+        print("\nexception_lst:", exception_lst)
     #
     # find the groups and bit positions of individual features
     #
@@ -183,7 +202,8 @@ def read_alphabet(file_name):
             full_bin_to_phoneme_set[intset] = set()
         full_bin_to_phoneme_set[intset].add(phoneme)
     if cfg.verbosity > 10:
-        lst = [fon + "=" + spaced_bin_int(intg) for fon, intg in sorted(phoneme_to_full_bin.items())]
+        lst = [fon + "=" + spaced_bin_int(intg) for fon, intg in
+               sorted(phoneme_to_full_bin.items())]
         s = "\n".join(lst)
         print("\nphoneme_to_full_bin")
         print(s)
