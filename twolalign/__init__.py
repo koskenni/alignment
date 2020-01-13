@@ -2,6 +2,7 @@ __all__ = [
     "aligner",
     "alphabet",
     "cfg",
+    "fs",
     "metric",
     "multialign",
     "raw2named",

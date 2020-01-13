@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="twolalign",
-    version="0.0.7",
+    version="0.0.14",
     author="Kimmo Koskenniemi",
     author_email="koskenni@gmail.com",
     description="Aligning words in the two-level framework",
@@ -21,6 +21,7 @@ setuptools.setup(
     entry_points={
         "console_scripts": [
             "twol-aligner = twolalign.aligner:main",
+            "twol-metric = twolalign.metric:main",
             "twol-multialign = twolalign.multialign:main",
             "twol-table2words = twolalign.table2words:step1",
             "twol-words2zerofilled = twolalign.words2zerofilled:main",
@@ -28,5 +29,10 @@ setuptools.setup(
             "twol-raw2named = twolalign.raw2named:main",
         ]
     },
+    install_requires=[
+        'alphabet',
+        'cfg',
+        'fs'
+    ],
     python_requires='>=3.6',
 )

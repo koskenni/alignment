@@ -9,12 +9,10 @@ This is free software according to GNU GPL 3 License.
 import re, sys
 import hfst
 import grapheme
-import alphabet
-import cfg
-import fs
 
 def remove_bad_transitions(fsa):
     """Copy the FSA excluding transitions with consonants and vowels"""
+    import alphabet, cfg
     old_bfsa = hfst.HfstBasicTransducer(fsa)
     new_bfsa = hfst.HfstBasicTransducer()
     for state in old_bfsa.states():
@@ -45,6 +43,7 @@ def shuffle_with_zeros(string, target_length):
     Returns a fsa which accepts all the strings with the inserted zeros.
     All strings have exactly target_length symbols.
     """
+    import cfg, fs
     ### result_fsa = hfst.fst(string) # not correct for composed graphemes !!!
     result_fsa = fs.string_to_fsa(string)
     l = grapheme.length(string)
@@ -62,6 +61,7 @@ def shuffle_with_zeros(string, target_length):
 def set_weights(fsa):
     """Sets weights to transitions using mphon_weight()
     """
+    import alphabet, cfg
     bfsa = hfst.HfstBasicTransducer(fsa)
     for state in bfsa.states():
         for arc in bfsa.transitions(state):
@@ -83,6 +83,7 @@ def multialign(strings, target_length):
     if the target lenght is too small and also that there may be
     all-zero correspondences if the target length is too long.
     """
+    import cfg
     s1 = strings[0]
     fsa = shuffle_with_zeros(s1, target_length)
     for string in strings[1:]:
@@ -133,6 +134,7 @@ def prefer_final_zeros(sym_lst_lst):
     return best_sym_lst
 
 def classify_sym(sym):
+    import alphabet
     char_set = set(sym)
     if char_set <= alphabet.consonant_set:
         if "Ø" in char_set:
@@ -141,11 +143,6 @@ def classify_sym(sym):
     elif "Ø" in char_set:
         return "v"
     else: return "V"
-
-consonant_lst = sorted(list(alphabet.consonant_set))
-vowel_lst =sorted(list(alphabet.vowel_set))
-consonant_re = "(" + "|".join(consonant_lst) + ")"
-vowel_re = "(" + "|".join(vowel_lst) + ")"
 
 def prefer_syl_struct(results):
     """Selects alignments according to syllable structure and zero count
@@ -197,6 +194,8 @@ def aligner(words, max_zeros_in_longest, line):
 
     Returns the best alignment as a list of raw morphophoneme.
     """
+    import alphabet, cfg
+
     max_length = max([grapheme.length(x) for x in words])
     weighted_fsa = hfst.empty_fst()
     for m in range(max_length, max_length + max_zeros_in_longest + 1):
@@ -226,6 +225,13 @@ def aligner(words, max_zeros_in_longest, line):
     return best
 
 def main():
+    import re, sys
+    import hfst
+    import grapheme
+    import alphabet
+    import cfg
+    import fs
+
     import argparse
     arpar = argparse.ArgumentParser("python3 multialign.py")
     arpar.add_argument("-l", "--layout",

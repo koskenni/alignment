@@ -1,7 +1,3 @@
-import sys
-import re
-import alphabet
-
 features_of_phoneme = {}
 feature_set = set()
 input_phonemes = set()
@@ -27,6 +23,10 @@ def main():
         help="Level of diagnostic output printed, default=0",
         type=int, default=0)
     args = arpar.parse_args()
+
+    import sys
+    import re
+    import alphabet
 
     alphabet.read_alphabet(args.alphabet)
 

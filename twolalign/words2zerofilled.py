@@ -17,6 +17,10 @@ def main():
         default="ksk-alig-examp.csv",
         help="example words plus zero-filled aligned forms as a CSV file")
     argparser.add_argument(
+        "alphabet",
+        default="alphabet-test.text",
+        help="An alphabet definition which determines the weights for morphophonemes")
+    argparser.add_argument(
         "-s", "--morph-separator",
         default=".",
         help="separator between morphs in the word form")
@@ -97,6 +101,9 @@ def main():
     import cfg
     from multialign import aligner
     cfg.all_zero_weight = 1.0
+
+    import alphabet
+    alphabet.read_alphabet(args.alphabet)
 
     alignments = {}
     """All aligned morphs. index: morpheme name, value: sequence of aligned symbols.

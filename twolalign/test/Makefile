@@ -1,5 +1,6 @@
 BASE=demo
 DELIM=,
+ALPHABET=alphabet-test.text
 .SUFFIXES:
 
 .PHONY : renamed raw zerofilled words features listraw clean
@@ -26,8 +27,8 @@ $(BASE)-renamed.pstr : $(BASE)-raw.csv $(BASE)-newnames.csv
 $(BASE)-raw.csv : $(BASE)-zerofilled.csv $(BASE)-affixes.csv
 	twol-zerofilled2raw -d '$(DELIM)' $< $@ $(BASE)-affixes.csv
 
-$(BASE)-zerofilled.csv : $(BASE)-words.csv
-	twol-words2zerofilled -d '$(DELIM)' $< $@
+$(BASE)-zerofilled.csv : $(BASE)-words.csv 
+	twol-words2zerofilled -d '$(DELIM)' $< $@ $(ALPHABET)
 
 $(BASE)-words.csv : $(BASE)-table.csv
 	twol-table2words -d '$(DELIM)' -s "."  $< $@
