@@ -1,12 +1,16 @@
 """fs.py: A wrapper module for basic finite-state operations
 
-The HFST engine used for accomplishing the operations but all functions make copies of their arguments when it is necessary to avoid side-effects.
+The HFST engine used for accomplishing the operations but all
+functions make copies of their arguments when it is necessary to avoid
+side-effects.
 
-© Kimmo Koskenniemi, 2018. This is free code under the GPL 3 license."""
+© Kimmo Koskenniemi, 2018-2020. This is free code under the GPL 3 license.
+
+"""
 
 import hfst
 import grapheme
-import cfg
+from twolalign.cfg import verbosity
 
 def expr(e):
     """Return an FST corresponding to a XFST regular expression"""
@@ -105,7 +109,7 @@ def string_to_fsa(grapheme_string):
     bfsa = hfst.HfstBasicTransducer()
     grapheme_list = list(grapheme.graphemes(grapheme_string))
     string_pair_path = tuple(zip(grapheme_list, grapheme_list))
-    if cfg.verbosity >= 10:
+    if verbosity >= 10:
         print(grapheme_list)
         print(string_pair_path)
     bfsa.disjunct(string_pair_path, 0)

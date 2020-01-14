@@ -1,3 +1,15 @@
+"""metric.py
+
+Produces a weighted finite-state transducer (WFST) out of the alphabet
+definition as interpreted by alphabet.py.  The WFST is the used by the
+aligner.py program.
+
+Copyright 2020, Kimmo Koskenniemi
+
+This is free software according to GNU GPL 3 license.
+
+"""
+
 features_of_phoneme = {}
 feature_set = set()
 input_phonemes = set()
@@ -26,7 +38,7 @@ def main():
 
     import sys
     import re
-    import alphabet
+    import twolalign.alphabet as alphabet
 
     alphabet.read_alphabet(args.alphabet)
 
@@ -41,7 +53,8 @@ def main():
         for outsym in alphabet.vowel_set:
             mphon = insym + outsym
             if alphabet.mphon_is_valid(mphon):
-                xyw = "{}:{}::{}".format(insym, outsym, alphabet.mphon_weight(mphon))
+                xyw = "{}:{}::{}".format(insym, outsym,
+                                         alphabet.mphon_weight(mphon))
                 pair_weight_lst.append(xyw)
     pair_weight_str = "|".join(pair_weight_lst)
     if args.verbosity >= 10:

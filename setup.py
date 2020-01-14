@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="twolalign",
-    version="0.0.14",
+    version="0.0.18",
     author="Kimmo Koskenniemi",
     author_email="koskenni@gmail.com",
     description="Aligning words in the two-level framework",

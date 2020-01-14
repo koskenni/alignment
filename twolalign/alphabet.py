@@ -1,5 +1,17 @@
+"""alphabet.py
+
+Processes an alphabet definition file so that it can be use both by
+aligner.py and by multialign.py.  In particular, it computes weights
+for phoneme pairs or morphophonemes for the purposes of weighted
+alignment.
+
+Copyright 2017-2020, Kimmo Koskenniemi
+
+This is free software according to GNU GPL 3 license.
+
+"""
 import sys, re
-import cfg
+from twolalign.cfg import verbosity
 
 cost_of_zero_c = 20
 cost_of_zero_v = 10
@@ -31,7 +43,7 @@ def mphon_weight(mphon):
     if re.fullmatch(r"[Ø]+", mphon):
         return 999999
     mphon_int = phoneme_to_full_bin[mphon]
-    if cfg.verbosity > 10:
+    if verbosity > 10:
         print("\nphoneme_to_full_bin[{}] = {}".format(mphon,
                                                       spaced_bin_int(mphon_int)))
     high = mphon_int >> 48               # extract consonantal feature bits
@@ -40,7 +52,7 @@ def mphon_weight(mphon):
         c2 = (high >> 16) & 0xffff       # voicing set
         c3 = high & 0xffff               # manner of articulation set
         w = weight_c1[c1] + weight_c2[c2] + weight_c3[c3]
-        if cfg.verbosity >= 10:
+        if verbosity >= 10:
             print("\nmphon_weight info of a cons set:", hex(c1), weight_c1[c1],
                   hex(c2), weight_c2[c2], hex(c3), weight_c3[c3])
     else:
@@ -49,10 +61,10 @@ def mphon_weight(mphon):
         v2 = (low >> 16) & 0xffff        # backness
         v3 = low & 0xffff                # rounding
         w = weight_v1[v1] + weight_v2[v2] + weight_v3[v3]
-        if cfg.verbosity >= 10:
+        if verbosity >= 10:
             print("\nmphon_weight info of a vowel set:", hex(v1), weight_v1[v1],
                   hex(v2), weight_v2[v2], hex(v3), weight_v3[v3])
-    if cfg.verbosity >= 10:
+    if verbosity >= 10:
         print("\nmphon_int[{}]  = {}".format(mphon, spaced_bin_int(mphon_int)))
         print("mphon_weight[{}] = {}".format(mphon, w))
     return w
@@ -81,7 +93,7 @@ def mphon_is_valid(mphon):
         if res not in full_bin_to_phoneme_set:
             full_bin_to_phoneme_set[res] = set()
         full_bin_to_phoneme_set[res].add(mphon)
-        if cfg.verbosity > 10:
+        if verbosity > 10:
             print("\nphoneme_to_full_bin[{}] = {}".format(mphon, spaced_bin_int(res)))
         return True
     else:
@@ -93,7 +105,7 @@ def mphon_is_valid(mphon):
             if res not in full_bin_to_phoneme_set:
                 full_bin_to_phoneme_set[res] = set()
             full_bin_to_phoneme_set[res].add(mphon)
-            if cfg.verbosity > 10:
+            if verbosity > 10:
                 print("\nphoneme_to_full_bin[{}] = {}".format(mphon, spaced_bin_int(res)))
             return True
         else:
@@ -156,7 +168,7 @@ def read_alphabet(file_name):
     #
     # now the alphabet data has been read in and extracted
     #
-    if cfg.verbosity > 10:
+    if verbosity > 10:
         print("\ncost_of_zero_c:", cost_of_zero_c)
         print("\ncost_of_zero_v:", cost_of_zero_v)
         print("\nfeature_set_lst:", feature_set_lst)
@@ -177,7 +189,7 @@ def read_alphabet(file_name):
             j +=1
         i += 1
     del feature_group["Zero"]   # feature Zero belongs all groups and needs special care
-    if cfg.verbosity > 10:
+    if verbosity > 10:
         print("\nfeature_group:", feature_group)
         print("\nfeature_bit_loc_pos:", feature_bit_loc_pos)
     #
@@ -201,7 +213,7 @@ def read_alphabet(file_name):
         if intset not in full_bin_to_phoneme_set:
             full_bin_to_phoneme_set[intset] = set()
         full_bin_to_phoneme_set[intset].add(phoneme)
-    if cfg.verbosity > 10:
+    if verbosity > 10:
         lst = [fon + "=" + spaced_bin_int(intg) for fon, intg in
                sorted(phoneme_to_full_bin.items())]
         s = "\n".join(lst)
@@ -233,10 +245,10 @@ def read_alphabet(file_name):
         bin_set = 0
         for feat in subset:
             bin_set = bin_set | (1 << feature_bit_loc_pos[feat])
-        if cfg.verbosity > 15:
+        if verbosity > 15:
             print("\nsubset, bin_set, weight, group:", subset, bin(bin_set), weight, group) ###
         subset_bin_lst.append((bin_set, weight, group, bin(bin_set)))
-    if cfg.verbosity > 10:
+    if verbosity > 10:
         print("\nsubset_bin_lst:", subset_bin_lst)
     #
     # compute weights for all possible feature sets in each of the six groups
@@ -253,11 +265,11 @@ def read_alphabet(file_name):
         for j in range(2, 1 << l, 2):
             w = 100
             for subset_bin, weight, group, bin_str in subset_bin_lst:
-                if cfg.verbosity >= 20:
+                if verbosity >= 20:
                     print("\nsubset_bin, weight, group, bin_str, i:", bin(j), weight, group, bin_str, i)
                 #if group == i and ((subset_bin | ~j) & mask) == mask and weight < w:
                 test = ~(subset_bin | ~j)
-                if cfg.verbosity >= 15:
+                if verbosity >= 15:
                     print(">>> test:", bin(test)) ###
                 if group == i and not test and weight < w:
                     w = weight
@@ -266,7 +278,7 @@ def read_alphabet(file_name):
         for j in range(1, l):
             weight_dict[1 << j] = 0
             weight_dict[(1 << j) +1] = (cost_of_zero_c if i < 3 else cost_of_zero_v)
-        if cfg.verbosity > 10:
+        if verbosity > 10:
             print("\nweight_dict[{}]:".format(i), weight_dict)
             #for set_int, weight in weight_dict.items():
             #    for phoneme, feature_tuple in features_of_phoneme.items():
@@ -276,12 +288,12 @@ def read_alphabet(file_name):
         weight_dict_lst.append(weight_dict)
         i += 1
     (weight_c1, weight_c2, weight_c3, weight_v1, weight_v2, weight_v3) = weight_dict_lst
-    #if cfg.verbosity > 10:
+    #if verbosity > 10:
     #    print("\nweight_dict_lst:", weight_dict_lst)
     return
 
 if __name__ == "__main__":
-    cfg.verbosity = 1
+    verbosity = 1
     read_alphabet("alphabet-et.text")
     mphon_is_valid("ei")
     print(mphon_weight("ei"))

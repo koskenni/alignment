@@ -98,12 +98,13 @@ def main():
     # STEP 2:
     # align the allomorphs of each morpheme
 
-    import cfg
-    from multialign import aligner
+    import twolalign.cfg as cfg
     cfg.all_zero_weight = 1.0
 
-    import alphabet
-    alphabet.read_alphabet(args.alphabet)
+    from twolalign.multialign import aligner
+    from twolalign.alphabet import read_alphabet
+    
+    read_alphabet(args.alphabet)
 
     alignments = {}
     """All aligned morphs. index: morpheme name, value: sequence of aligned symbols.

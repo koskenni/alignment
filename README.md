@@ -14,11 +14,11 @@ Now there are pairs of identical phonemes (k:k, e:e and l:l) and one modificatio
 
 ## Contents of this repository
 
-There are stand-alone Python 3 programs which can be used for aligning individual words:
+There are stand-alone Python 3 programs which can be used from command-line for aligning individual words:
 
-1. ``aligner.py`` and ``metrics.py`` with which you can compare cognate words of two languages. The latter reads an alphabet definition and writes a weighted finite-state transducer (WFST) which the former program needs for the concrete alignment.
+1. ``twol-aligner`` and ``metrics.py`` with which you can compare cognate words of two languages. The latter reads an alphabet definition and writes a weighted finite-state transducer (WFST) which the former program needs for the concrete alignment.
 
-2. ``multialign.py`` compares two or more corresponding words or morphs and aligns them.
+2. ``twol-multialign`` compares two or more corresponding words or morphs and aligns them.
 
 There is a suite of stand-alone programs for building morphophonemic representations of morphemes.  The input consists of inflected word forms given as a table where individual cells contain the word forms where morph boundaries are indicated.  The forms with the same stem are given as a row of the table and different forms correspond to the columns of the table.  The programs are:
 
@@ -30,7 +30,7 @@ There is a suite of stand-alone programs for building morphophonemic representat
 
 6. ``twol-raw2named`` reads in the output of the above program and a table of user-given shorter names for some raw morphophonemes and writes out the examples as two-level symbol pairs, one example per line.  The examples now consist of a sequence of symbol pairs where the first component of a pair is the morphophoneme and the second component is the surface character.  This file is used by the two-level compiler in conjunction with the rules which the linguist now can start to design.
 
-More information on these programs can be found at: https://pytwolc.readthedocs.io/en/latest/morphophon.html
+More information on these programs can be found at: https://pytwolc.readthedocs.io/en/latest/morphophon.html and by starting the programs with a ``--help`` option.
 
 ## Licenses
 

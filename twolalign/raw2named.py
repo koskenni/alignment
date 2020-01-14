@@ -1,14 +1,15 @@
 """ Forms morphophonemic representations out of zero-filled example word forms
 
     This program is free software under GPL 3 license
-    Copyright Kimmo Koskenniemi 2017-2018
+
+    Copyright Kimmo Koskenniemi 2017-2020
 """
 
 def main():
     import re
     import csv
-    import cfg
     import argparse
+
     argparser = argparse.ArgumentParser(
         "python3 raw2named.py",
         description="joins and renames raw morphophonemes")
@@ -38,6 +39,8 @@ def main():
         type=int,
         help="level of diagnostic and debugging output")
     args = argparser.parse_args()
+
+    import twolalign.cfg as cfg
     cfg.verbosity = args.verbosity
 
     mphon_name = { }
