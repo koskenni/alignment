@@ -242,6 +242,9 @@ def main():
 
     import argparse
     arpar = argparse.ArgumentParser("python3 multialign.py")
+    arpar.add_argument("alphabet",
+        help="A file which defines the phonemes through their distinctive features",
+        default="")
     arpar.add_argument("-l", "--layout",
         choices=["vertical","list","horizontal"],
         help="Output layout",
@@ -259,18 +262,22 @@ def main():
     arpar.add_argument("-v", "--verbosity",
         help="Level of diagnostic output",
         type=int, default=0)
-    arpar.add_argument("-a", "--alphabet",
-        help="A file which defines the phonemes through their distinctive features",
-        default="")
     arpar.add_argument("-z", "--zeros",
         help="Number of extra zeros allowed beyond the minimum",
         type=int, default=1)
+    arpar.add_argument("-V", "--version",
+        help="Print the version of the program and quit",
+        default=False,
+        action="store_true")
     args = arpar.parse_args()
-    verbosity = args.verbosity
 
-    if args.alphabet:
-        alphabet.read_alphabet(args.alphabet)
+    if args.version:
+        print("twol-multialign version 0.1.0")
+        return
+    verbosity = args.verbosity
+    alphabet.read_alphabet(args.alphabet)
     valid_letters = alphabet.vowel_set | alphabet.consonant_set | set(" ")
+
     for line in sys.stdin:
         line = line.strip()
         lst = line.split("!", maxsplit=1)
